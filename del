@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# Script para mover arquivos para a lixeira do sistema!
+# By Cyberia
+
+if [ "$1" == "" ]; then
+        echo -e "del: missing operand\nTry “del --help” for more information."
+        exit
+fi
+
+TRASH=/home/$(logname)/.local/share/Trash
+INFO=$TRASH/info
+FILE=$TRASH/files/$2
+
+case $1 in
+        -r | --restore)
+                if [ "$2" == "" ]; then
+                        echo -e "del: missing operand\nTry “del --help” for more information."
+                        exit
+                else
+                        if [ -f $FILE ] || [ -d $FILE ]; then
+                                cat $INFO/$2.trashinfo | grep $2 >/dev/null 2>&1 && mv $FILE $2
+                        else
+                                echo "del: cannot restore “$2”: File isn´t in the recycle bin"
+                        fi
+                fi
+        ;;
+        -t | --trash)
+                ls -1 $TRASH/files
+        ;;
+        -f | --force)
+                if [ "$2" == "" ]; then
+                        echo -e "del: missing operand\nTry “del --help” for more information."
+                        exit
+                else
+                        rm -rf $2
+                fi
+        ;;
+        -R | --recursive)
+                if [ "$2" == "" ]; then
+                        echo -e "del: missing operand\nTry “del --help” for more information."
+                        exit
+                else
+                        read -p "Are you sure you want to delete all system FILES and DIRECTORIES containing the name "$2"? (y/N)" ASK
+                        if [ "$ASK" == "y" ]; then
+                                cd / && find -name "$2" -exec rm -rf {} \; 2> /dev/null
+                                echo -e "Successfully deleted files and directories.\n"
+                        else
+                                exit
+                        fi
+                fi
+        ;;
+        -h | --help)
+                echo -e "\x1B[1;37mUsage: del [OPTION]... [FILE]...\x1B[0m"
+                echo -e "+*+ Moves FILES and DIRECTORIES to the recycle bin.\n"
+                echo "  -r, --restore          Recover files from the recycle bin"
+                echo "  -t, --trash            Displays all files that are in the recycle bin"
+                echo "  -f, --force            Deletes a file permanently without moving it to the recycle bin"
+                echo "  -R, --recursive        Delete all system files containing a specific name"
+                echo "  -h, --help             Display this help message"
+        ;;
+        -*)
+                echo -e "del: invalid option -- “$1”\nTry “del --help” for more information."
+        ;;
+        *)
+                if [ -f $PWD/$1 ] || [ -d $PWD/$1 ]; then
+                        mv $1 $TRASH/files/ && echo -e "[Trash Info]\nPath=$PWD/$1\nDeletionDate=`date +%Y-%m-%dT%H:%M:%S`" > $INFO/$1.trashinfo
+                        echo "File moved to recycle bin."
+
+                elif [ -f $1 ] || [ -d $1 ]; then
+                        mv $1 $TRASH/files/ && echo -e "[Trash Info]\nPath=$1\nDeletionDate=`date +%Y-%m-%dT%H:%M:%S`" > $INFO/$1.trashinfo
+                        echo "File moved to recycle bin."
+
+                else
+                        echo "del: cannot delete “$1”: No such file or directory"
+                fi
+        ;;
+esac
